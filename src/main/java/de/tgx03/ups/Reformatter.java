@@ -10,6 +10,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Reformats a given UPS zone table in xlsx format by the zones of the countries
+ * Only the country list must remain, with the country name in the first, the express ID in the second,
+ * the standard ID in the third and the expedited ID being in the fourth row.
+ * The tool automatically detects based on that whether a country is standard or expedited
+ */
 public class Reformatter {
 
     private static final ArrayList<Country> countries = new ArrayList<>(200);
@@ -19,12 +25,22 @@ public class Reformatter {
 
     private static AtomicInteger counter = new AtomicInteger();
 
+    /**
+     * Runs the tool
+     * @param args ignored
+     * @throws IOException Happens when there's an error reading the table or writing the output
+     * @throws InterruptedException In case something weird happens with threading
+     */
     public static void main(String[] args) throws IOException, InterruptedException {
         read();
         sort();
         write();
     }
 
+    /**
+     * Prompts the user to enter the location of the file and then reads it
+     * @throws IOException When the file couldn't be read
+     */
     private static void read() throws IOException {
         System.out.println("Input file:");
         String fileName = ConsoleReader.readLine();
@@ -53,6 +69,9 @@ public class Reformatter {
         }
     }
 
+    /**
+     * Sorts the countries in their corresponding categories (express, standard and expedited)
+     */
     private static void sort() {
         for (Country current : countries) {
             express.put(current.expressID, current.name);
@@ -64,6 +83,11 @@ public class Reformatter {
         }
     }
 
+    /**
+     * Creates a new excel spreadsheet consisting of 3 sheets for express, expedited and standard
+     * @throws IOException When the output file could not be written to
+     * @throws InterruptedException In case the threads do something weird while creating the sheets
+     */
     private static void write() throws IOException, InterruptedException {
         Workbook output = WorkbookFactory.create(false);
         Sheet express = output.createSheet("Express");
@@ -86,12 +110,21 @@ public class Reformatter {
         output.write(outputStream);
     }
 
+    /**
+     * A class that takes the Lists from the parent holding the Country ids
+     * and converts them into a sheet
+     */
     private static class Writer implements Runnable {
 
         private final MultiHashMap<Short, String> map;
         private final Sheet sheet;
         private final ArrayList<ArrayList<String>> values = new ArrayList<>(10);
 
+        /**
+         * Initializes a new writer with its corresponding source and target
+         * @param sheet The sheet to write to
+         * @param map The map to use the data from
+         */
         public Writer(Sheet sheet, MultiHashMap<Short, String> map) {
             this.sheet = sheet;
             this.map = map;
@@ -105,6 +138,9 @@ public class Reformatter {
             writeMapToSheet();
         }
 
+        /**
+         * Convert the bare list into a 2D list sorted by the country ID
+         */
         private void createList() {
             Set<Map.Entry<Short, String>> set = map.entrySet();
             HashMap<Short, Integer> idMappedToColumn = new HashMap<>(12);
@@ -118,6 +154,9 @@ public class Reformatter {
             }
         }
 
+        /**
+         * Put the country IDs in ascending order and sort the lists in alphabetical order
+         */
         private void sort() {
             values.sort(Comparator.comparingInt(o -> Integer.parseInt(o.get(0))));
             for (ArrayList<String> list : values) {
@@ -125,6 +164,9 @@ public class Reformatter {
             }
         }
 
+        /**
+         * Write the created and sorted lists to the spreadsheet
+         */
         private void writeMapToSheet() {
             for (int i = 0; i < values.size(); i++) {
                 List<String> current = values.get(i);
