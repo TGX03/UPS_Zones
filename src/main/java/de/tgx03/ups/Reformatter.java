@@ -91,13 +91,13 @@ public class Reformatter {
     private static void write() throws IOException, InterruptedException {
         Workbook output = WorkbookFactory.create(false);
         Sheet express = output.createSheet("Express");
-        Thread expressWriter = new Thread(new Writer(express, Reformatter.express));
+        Thread expressWriter = new Thread(new Writer(express, Reformatter.express), "Express");
         expressWriter.start();
         Sheet standard = output.createSheet("Standard");
-        Thread standardWriter = new Thread(new Writer(standard, Reformatter.standard));
+        Thread standardWriter = new Thread(new Writer(standard, Reformatter.standard), "Standard");
         standardWriter.start();
         Sheet expedited = output.createSheet("Expedited");
-        Thread expeditedWriter = new Thread(new Writer(expedited, Reformatter.expedited));
+        Thread expeditedWriter = new Thread(new Writer(expedited, Reformatter.expedited), "Expedited");
         expeditedWriter.start();
 
         expressWriter.join();
